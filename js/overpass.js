@@ -13,7 +13,7 @@ import overpass from "./overpass";
 import {htmlentities} from "./misc";
 import styleparser from "./jsmapcss";
 
-var overpass = new function() {
+var overpass = new (function() {
   // == private members ==
   var originalGeom2Layer;
   // == public members ==
@@ -704,7 +704,7 @@ var overpass = new function() {
                               );
                             });
                           } else {
-                            // hyperlinks for email adresses
+                            // hyperlinks for email addresses
                             v = v.replace(
                               /(([^\s()<>]+)@([^\s()<>]+[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/g,
                               '<a href="mailto:$1" target="_blank">$1</a>'
@@ -715,7 +715,7 @@ var overpass = new function() {
                           if (
                             ((wiki_lang = k.match(/^wikipedia\:(.*)$/)) &&
                               (wiki_page = v)) ||
-                            (k == "wikipedia" &&
+                            (k.match(/(^|:)wikipedia$/) &&
                               (wiki_lang = v.match(/^([a-zA-Z]+)\:(.*)$/)) &&
                               (wiki_page = wiki_lang[2]))
                           )
@@ -723,24 +723,21 @@ var overpass = new function() {
                               '<a href="//' +
                               wiki_lang[1] +
                               ".wikipedia.org/wiki/" +
-                              encodeURIComponent(wiki_page) +
+                              wiki_page +
                               '" target="_blank">' +
                               v +
                               "</a>";
                           // hyperlinks for wikidata entries
-                          var wikidata_page;
-                          if (
-                            (k == "wikidata" &&
-                              (wikidata_page = v.match(/^Q[0-9]+$/))) ||
-                            (k.match(/:wikidata$/) &&
-                              (wikidata_page = v.match(/^Q[0-9]+$/)))
-                          )
-                            v =
-                              '<a href="//www.wikidata.org/wiki/' +
-                              encodeURIComponent(wikidata_page[0]) +
-                              '" target="_blank">' +
-                              v +
-                              "</a>";
+                          if (k.match(/(^|:)wikidata$/))
+                            v = v.replace(/Q[0-9]+/g, function(q) {
+                              return (
+                                '<a href="//www.wikidata.org/wiki/' +
+                                q +
+                                '" target="_blank">' +
+                                q +
+                                "</a>"
+                              );
+                            });
                           // hyperlinks for wikimedia-commons entries
                           var wikimediacommons_page;
                           if (
@@ -753,7 +750,7 @@ var overpass = new function() {
                               '<a href="//commons.wikimedia.org/wiki/' +
                               wikimediacommons_page[1] +
                               ":" +
-                              encodeURIComponent(wikimediacommons_page[2]) +
+                              wikimediacommons_page[2] +
                               '" target="_blank">' +
                               v +
                               "</a>";
@@ -833,14 +830,14 @@ var overpass = new function() {
                           if (k == "user")
                             v =
                               '<a href="//www.openstreetmap.org/user/' +
-                              encodeURIComponent(v) +
+                              v +
                               '" target="_blank">' +
                               v +
                               "</a>";
                           if (k == "changeset")
                             v =
                               '<a href="//www.openstreetmap.org/changeset/' +
-                              encodeURIComponent(v) +
+                              v +
                               '" target="_blank">' +
                               v +
                               "</a>";
@@ -849,12 +846,15 @@ var overpass = new function() {
                         popup += "</ul>";
                       }
                       if (feature.geometry.type == "Point")
-                        popup +=
+                        popup += L.Util.template(
                           "<h3>Coordinates:</h3><p>" +
-                          feature.geometry.coordinates[1] +
-                          " / " +
-                          feature.geometry.coordinates[0] +
-                          " <small>(lat/lon)</small></p>";
+                            '<a href="geo:{lat},{lon}">{lat} / {lon}</a> ' +
+                            "<small>(lat/lon)</small></p>",
+                          {
+                            lat: feature.geometry.coordinates[1],
+                            lon: feature.geometry.coordinates[0]
+                          }
+                        );
                       if (
                         $.inArray(feature.geometry.type, [
                           "LineString",
@@ -1064,6 +1064,6 @@ var overpass = new function() {
   };
 
   // == initializations ==
-}(); // end create overpass object
+})(); // end create overpass object
 
 export default overpass;

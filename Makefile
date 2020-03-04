@@ -1,14 +1,10 @@
 # this builds overpass turbo
 # supported commands:
-#   * translations - updates translations from Transifex
 #   * presets - grabs presets and their translations from the iD-Project
 #   * icons - update icon sets))
 
-translations:
-	node locales/update_locales
-
 presets:
-	wget "https://github.com/openstreetmap/iD/raw/master/data/presets/presets.json" -O data/iD_presets.json --no-check-certificate
+	wget "https://github.com/openstreetmap/iD/raw/master/data/presets/presets.json" -O data/iD_presets.json
 	node data/get_preset_translations
 
 icons: icons-maki icons-mapnik icons-osmic
