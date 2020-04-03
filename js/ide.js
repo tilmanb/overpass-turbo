@@ -2,6 +2,7 @@
 import $ from "jquery";
 import _ from "lodash";
 import jQuery from "jquery";
+import "jquery-ui/ui/effects/effect-shake";
 import "jquery-ui/ui/widgets/autocomplete";
 import "jquery-ui/ui/widgets/accordion";
 import "jquery-ui/ui/widgets/dialog";
@@ -48,7 +49,7 @@ $(document).on("copy", function(e) {
   }
 });
 
-var ide = new function() {
+var ide = new (function() {
   // == private members ==
   var attribControl = null;
   var scaleControl = null;
@@ -81,8 +82,8 @@ var ide = new function() {
         .append(
           deletables && deletables.indexOf(item.value) !== -1
             ? '<div title="shift-click to remove from list" style="font-style:italic;">' +
-              item.label +
-              "</div>"
+                item.label +
+                "</div>"
             : "<div>" + item.label + "</div>"
         )
         .on("click", function(event) {
@@ -193,6 +194,9 @@ var ide = new function() {
 
   this.init = function() {
     ide.waiter.addInfo("ide starting up");
+    $("#overpass-turbo-version").html(
+      "overpass-turbo <code>" + GIT_VERSION + "</code>" // eslint-disable-line no-undef
+    );
     // (very raw) compatibility check <- TODO: put this into its own function
     if (
       jQuery.support.cors != true ||
@@ -373,16 +377,12 @@ var ide = new function() {
             if (ide.getRawQuery().match(/\{\{bbox\}\}/)) {
               if (bbox_filter.hasClass("disabled")) {
                 bbox_filter.removeClass("disabled");
-                $("span", bbox_filter).css("opacity", 1.0);
-                bbox_filter.css("cursor", "");
                 bbox_filter.attr("data-t", "[title]map_controlls.select_bbox");
                 i18n.translate_ui(bbox_filter[0]);
               }
             } else {
               if (!bbox_filter.hasClass("disabled")) {
                 bbox_filter.addClass("disabled");
-                $("span", bbox_filter).css("opacity", 0.5);
-                bbox_filter.css("cursor", "default");
                 bbox_filter.attr(
                   "data-t",
                   "[title]map_controlls.select_bbox_disabled"
@@ -554,6 +554,13 @@ var ide = new function() {
         link.href = "#";
         link.className += " t";
         link.setAttribute("data-t", "[title]map_controlls.localize_user");
+        if (!window.isSecureContext) {
+          link.className += " disabled";
+          link.setAttribute(
+            "data-t",
+            "[title]map_controlls.localize_user_disabled"
+          );
+        }
         i18n.translate_ui(link);
         L.DomEvent.addListener(
           link,
@@ -1338,31 +1345,37 @@ var ide = new function() {
       if (type == "template") continue;
       $("<li></li>")
         .append(
-          $('<a href="#">' + example + "</a>").on(
-            "click",
-            (function(example) {
-              return function() {
-                ide.loadExample(example);
-                $(this)
-                  .parents(".ui-dialog-content")
-                  .dialog("close");
-                return false;
-              };
-            })(example)
-          ),
-          $(
-            '<a href="#" title="' +
-              i18n.t("load.delete_query") +
-              '" class="delete-query"><span class="ui-icon ui-icon-close" style="display:inline-block;"/></a>'
-          ).on(
-            "click",
-            (function(example) {
-              return function() {
-                ide.removeExample(example, this);
-                return false;
-              };
-            })(example)
-          )
+          $("<a>")
+            .attr("href", "#")
+            .text(example)
+            .on(
+              "click",
+              (function(example) {
+                return function() {
+                  ide.loadExample(example);
+                  $(this)
+                    .parents(".ui-dialog-content")
+                    .dialog("close");
+                  return false;
+                };
+              })(example)
+            ),
+          $("<a>")
+            .attr("href", "#")
+            .attr("title", i18n.t("load.delete_query") + ": " + example)
+            .addClass("delete-query")
+            .css("float", "right")
+            .append($("<span>").addClass("ui-icon ui-icon-close"))
+            .on(
+              "click",
+              (function(example) {
+                return function() {
+                  ide.removeExample(example, this);
+                  return false;
+                };
+              })(example)
+            ),
+          $("<div>").css("clear", "right")
         )
         .appendTo("#load-dialog ul." + type);
       if (type == "saved_query") has_saved_query = true;
@@ -1398,31 +1411,37 @@ var ide = new function() {
             queries.forEach(function(q) {
               $("<li></li>")
                 .append(
-                  $('<a href="#">' + q.name + "</a>").on(
-                    "click",
-                    (function(query) {
-                      return function() {
-                        ide.setQuery(lzw_decode(Base64.decode(query.query)));
-                        $(this)
-                          .parents(".ui-dialog-content")
-                          .dialog("close");
-                        return false;
-                      };
-                    })(q)
-                  ),
-                  $(
-                    '<a href="#" title="' +
-                      i18n.t("load.delete_query") +
-                      '" class="delete-query"><span class="ui-icon ui-icon-close" style="display:inline-block;"/></a>'
-                  ).on(
-                    "click",
-                    (function(example) {
-                      return function() {
-                        ide.removeExampleSync(example, this);
-                        return false;
-                      };
-                    })(q)
-                  )
+                  $("<a>")
+                    .attr("href", "#")
+                    .text(q.name)
+                    .on(
+                      "click",
+                      (function(query) {
+                        return function() {
+                          ide.setQuery(lzw_decode(Base64.decode(query.query)));
+                          $(this)
+                            .parents(".ui-dialog-content")
+                            .dialog("close");
+                          return false;
+                        };
+                      })(q)
+                    ),
+                  $("<a>")
+                    .attr("href", "#")
+                    .attr("title", i18n.t("load.delete_query") + ": " + q.name)
+                    .addClass("delete-query")
+                    .css("float", "right")
+                    .append($("<span>").addClass("ui-icon ui-icon-close"))
+                    .on(
+                      "click",
+                      (function(example) {
+                        return function() {
+                          ide.removeExampleSync(example, this);
+                          return false;
+                        };
+                      })(q)
+                    ),
+                  $("<div>").css("clear", "right")
                 )
                 .appendTo("#load-dialog ul.osm");
             });
@@ -2326,8 +2345,6 @@ var ide = new function() {
             .first();
           var send_to_josm = function(query) {
             var JRC_url = "http://127.0.0.1:8111/";
-            if (location.protocol === "https:")
-              JRC_url = "https://127.0.0.1:8112/";
             $.getJSON(JRC_url + "version")
               .done(function(d, s, xhr) {
                 if (d.protocolversion.major == 1) {
@@ -2889,6 +2906,6 @@ var ide = new function() {
       }.bind(this)
     );
   };
-}(); // end create ide object
+})(); // end create ide object
 
 export default ide;
